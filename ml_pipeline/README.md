@@ -134,6 +134,84 @@ sharpness, against 1% under Gaussian blur. The rule layer therefore expresses
 this as a conjunction (`RampGroup`), and only severe smudges clear it; mild
 ones overlap the clean population outright and are left to the CNN.
 
+## Phase 3 — the CNN
+
+```bash
+python -m training.train                    # hybrid (image + features)
+python -m training.train --smoke            # ~30s wiring check
+python -m training.train --ablation image     # image only
+python -m training.train --ablation features  # features only
+```
+
+Writes `models/focal_cnn_v1.pt` plus a training history JSON.
+
+### Architecture
+
+MobileNetV3-Small (ImageNet-pretrained) with **two input branches** and two
+multi-label heads — 6 presence logits and 6 severity regressions. 1.1M
+parameters total, ~4 MB on disk.
+
+```
+image  224x224 -> MobileNetV3-Small features -> pool -> 576 ┐
+                                                           ├─> 256 -> dropout ┬─> presence (6)
+47 classical features -> log -> standardise -> MLP -> 64  ─┘                  └─> severity (6)
+```
+
+**Why the classical features are fed into the network** rather than only being
+used to cross-check its output. The CNN sees a 224×224 image; the features are
+measured on the full 768 px frame. Noise sigma, JPEG blockiness on the 8×8 grid
+and impulse ratio all live in exactly the detail that downscaling destroys — the
+network cannot recompute them however well it is trained. The branches are
+complementary: the features carry fine-scale measurement the image branch has
+lost, and the image carries spatial layout the 47 scalars cannot express.
+
+`--ablation` disables either branch, so the Phase 5 comparison runs the same
+architecture and training loop three ways instead of comparing three programs.
+
+### Training schedule
+
+| Phase | Epochs | Trainable | LR |
+|---|---|---|---|
+| A — frozen backbone | 10 | 175 K | 1e-3 |
+| B — last 2 blocks unfrozen | 15 | 525 K | 1e-5 backbone / 1e-4 heads, cosine |
+
+Phase A exists because a randomly initialised head emits large gradients for its
+first few hundred steps; letting those reach the backbone destroys the
+pretrained filters before the head has learned anything worth propagating.
+Phase B reopens only the last two blocks — early layers encode edges and colour
+opponency that are as valid for quality assessment as for classification.
+
+Model selection is on **validation AUC, not loss**: the loss mixes classification
+and regression on different scales, so a run can improve it while getting worse
+at the detection the product depends on.
+
+### Three decisions specific to quality assessment
+
+**Severity loss is masked to present issues.** Severity is undefined where an
+issue is absent — its label is 0 by convention only. Regressing against those
+zeros is a far easier objective than the real one and would teach the head to
+predict 0 everywhere.
+
+**The whole frame is resized to 224×224, never centre-cropped.** The ImageNet
+convention discards about a quarter of the image. A scratch or blown corner can
+sit anywhere, and cropping it away turns a correctly-labelled defective image
+into a mislabelled clean one. Squashed aspect costs less than lost edges.
+
+**Augmentation is flips only.** Brightness jitter, contrast jitter, blur, added
+noise and random resized crop are each *one of the six degradations being
+detected*, and would silently rewrite the label they were trained against.
+Scale changes are equally unsafe — magnifying a crop enlarges the blur kernel
+and noise grain with it.
+
+Class imbalance is handled with per-issue `pos_weight` rather than a
+`WeightedRandomSampler`: with six co-occurring labels there is no single
+quantity to balance sampling on, and oversampling to fix one issue's ratio
+distorts the other five.
+
+Configuration is dataclasses plus CLI flags rather than a YAML file — one fewer
+format to keep in sync, and the defaults stay type-checked next to the code
+that reads them.
+
 ## Design notes
 
 **Why synthetic.** Owning every transform parameter means the labels are exact
