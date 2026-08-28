@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ML artifacts
+ml_pipeline/dataset/raw/
+ml_pipeline/dataset/generated/
+ml_pipeline/models/*.pt
+ml_pipeline/models/*.onnx
+!ml_pipeline/models/.gitkeep
+ml_pipeline/evaluation/reports/*
+!ml_pipeline/evaluation/reports/.gitkeep
+*.parquet
+
+# Backend
+backend/uploads/
+backend/*.db
+backend/*.sqlite3
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Env
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker
+docker-compose.override.yml
