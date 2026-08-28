@@ -52,6 +52,12 @@ class TrainConfig:
     early_stopping_patience: int = 3
     num_workers: int = 4
     seed: int = 1234
+    #: Cached frozen-backbone embeddings for Phase A, if built.
+    embeddings_dir: str | None = None
+    #: Cap on training images used in Phase B. Fine-tuning the last two blocks
+    #: is a refinement of a head already trained on the full corpus, so it can
+    #: run on a subsample when full-corpus backprop is not affordable.
+    finetune_subset: int | None = None
 
 
 class FocalLoss(nn.Module):
@@ -95,10 +101,22 @@ class FocalLoss(nn.Module):
 def _batch_inputs(batch: dict, model: FocalNet, device: torch.device) -> dict:
     inputs = {}
     if model.config.use_image:
-        inputs["image"] = batch["image"].to(device, non_blocking=True)
+        # A batch carrying an embedding came from the cache, and the heads are
+        # run directly from it. Dispatching on the batch rather than on a flag
+        # keeps the two paths from drifting apart.
+        if "embedding" in batch:
+            inputs["embedding"] = batch["embedding"].to(device, non_blocking=True)
+        else:
+            inputs["image"] = batch["image"].to(device, non_blocking=True)
     if model.config.use_features:
         inputs["features"] = batch["features"].to(device, non_blocking=True)
     return inputs
+
+
+def _apply(model: FocalNet, inputs: dict) -> dict:
+    if "embedding" in inputs:
+        return model.forward_from_embedding(**inputs)
+    return model(**inputs)
 
 
 def run_epoch(
@@ -123,7 +141,7 @@ def run_epoch(
                 "severity": batch["severity"].to(device),
             }
 
-            output = model(**inputs)
+            output = _apply(model, inputs)
             losses = criterion(output, target)
 
             if training:
@@ -210,6 +228,20 @@ def train(config: TrainConfig, model_config: ModelConfig, smoke: bool = False) -
         num_workers=workers, pin_memory=device.type == "cuda",
     )
 
+    # Phase A can run from cached embeddings, which is the difference between
+    # roughly 40 minutes and under one minute per epoch on CPU.
+    embedding_loaders = None
+    if config.embeddings_dir and model_config.use_image:
+        from training.dataset import load_embedding_split
+
+        cached_train = load_embedding_split(config.embeddings_dir, "train", train_set, train=True)
+        cached_val = load_embedding_split(config.embeddings_dir, "val", val_set)
+        embedding_loaders = (
+            DataLoader(cached_train, batch_size=config.batch_size, shuffle=True, drop_last=True),
+            DataLoader(cached_val, batch_size=config.batch_size, shuffle=False),
+        )
+        print(f"using cached embeddings from {config.embeddings_dir} for the frozen phase")
+
     model_config.n_features = len(FEATURE_NAMES)
     model = FocalNet(model_config).to(device)
 
@@ -227,17 +259,18 @@ def train(config: TrainConfig, model_config: ModelConfig, smoke: bool = False) -
     out_dir = Path(config.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    def run_phase(name: str, epochs: int, optimizer, scheduler=None) -> bool:
+    def run_phase(name: str, epochs: int, optimizer, scheduler=None, loaders=None) -> bool:
         nonlocal best_score, best_state, epochs_without_gain
         trainable, total = model.trainable_parameter_count()
         # ASCII only: Windows consoles default to a code page that mangles
         # anything else, and this is a CLI people run there.
         print(f"\n=== {name}: {epochs} epochs, {trainable:,}/{total:,} parameters trainable ===")
+        phase_train, phase_val = loaders if loaders else (train_loader, val_loader)
 
         for epoch in range(1, epochs + 1):
             started = time.time()
-            train_metrics = run_epoch(model, train_loader, criterion, device, optimizer)
-            val_metrics = run_epoch(model, val_loader, criterion, device)
+            train_metrics = run_epoch(model, phase_train, criterion, device, optimizer)
+            val_metrics = run_epoch(model, phase_val, criterion, device)
             if scheduler is not None:
                 scheduler.step()
 
@@ -276,6 +309,7 @@ def train(config: TrainConfig, model_config: ModelConfig, smoke: bool = False) -
         "Phase A (frozen backbone)",
         1 if smoke else config.head_epochs,
         torch.optim.AdamW(head_params, lr=config.head_lr, weight_decay=config.weight_decay),
+        loaders=embedding_loaders,
     )
 
     # ---- Phase B: fine-tune the last blocks ----
@@ -295,9 +329,25 @@ def train(config: TrainConfig, model_config: ModelConfig, smoke: bool = False) -
             weight_decay=config.weight_decay,
         )
         epochs = 1 if smoke else config.finetune_epochs
+        finetune_loaders = None
+        if config.finetune_subset and config.finetune_subset < len(train_set):
+            from torch.utils.data import Subset
+
+            generator = torch.Generator().manual_seed(config.seed)
+            chosen = torch.randperm(len(train_set), generator=generator)[: config.finetune_subset]
+            finetune_loaders = (
+                DataLoader(
+                    Subset(train_set, chosen.tolist()), batch_size=config.batch_size,
+                    shuffle=True, num_workers=workers, drop_last=True,
+                ),
+                val_loader,
+            )
+            print(f"fine-tuning on a {config.finetune_subset}-image subsample of the training split")
+
         run_phase(
             "Phase B (fine-tuning)", epochs, optimizer,
             torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs),
+            loaders=finetune_loaders,
         )
 
     if best_state is not None:
@@ -340,7 +390,22 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--no-pretrained", action="store_true")
+    parser.add_argument(
+        "--embeddings", default=None,
+        help="cached frozen-backbone embeddings, for a fast Phase A "
+             "(build with: python -m training.cache_embeddings)",
+    )
+    parser.add_argument(
+        "--finetune-subset", type=int, default=None,
+        help="cap the training images used in Phase B",
+    )
+    parser.add_argument("--head-epochs", type=int, default=None)
+    parser.add_argument("--finetune-epochs", type=int, default=None)
+    parser.add_argument("--threads", type=int, default=0, help="torch CPU threads (0 = default)")
     args = parser.parse_args()
+
+    if args.threads:
+        torch.set_num_threads(args.threads)
 
     names = {"hybrid": "focal_cnn_v1", "image": "focal_cnn_image_only", "features": "focal_cnn_features_only"}
     config = TrainConfig(
@@ -349,9 +414,15 @@ def main() -> None:
         model_name=names[args.ablation],
         batch_size=args.batch_size,
         num_workers=args.num_workers,
+        embeddings_dir=args.embeddings,
+        finetune_subset=args.finetune_subset,
     )
     if args.epochs:
         config.head_epochs = config.finetune_epochs = args.epochs
+    if args.head_epochs is not None:
+        config.head_epochs = args.head_epochs
+    if args.finetune_epochs is not None:
+        config.finetune_epochs = args.finetune_epochs
 
     model_config = ModelConfig(
         use_image=args.ablation in ("hybrid", "image"),

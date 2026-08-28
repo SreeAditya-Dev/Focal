@@ -161,6 +161,44 @@ class FocalNet(nn.Module):
             "severity_logits": self.severity_head(hidden),
         }
 
+    def embed_image(self, image: torch.Tensor) -> torch.Tensor:
+        """Pooled backbone embedding, before fusion with the feature branch."""
+        if not self.config.use_image:
+            raise ValueError("this model has no image branch")
+        return self.pool(self.features(image)).flatten(1)
+
+    def forward_from_embedding(
+        self, embedding: torch.Tensor | None = None, features: torch.Tensor | None = None
+    ) -> dict[str, torch.Tensor]:
+        """Run the heads from a precomputed backbone embedding.
+
+        While the backbone is frozen its output is a fixed function of the
+        image, so recomputing it every epoch does identical work repeatedly —
+        and that convolution is essentially the entire cost of a training step.
+        Caching the embeddings once turns the frozen-backbone phase into
+        training a small MLP.
+
+        Only valid while the backbone really is frozen. Once fine-tuning
+        reopens it the embeddings change every step and ``forward`` must be
+        used instead.
+        """
+        parts = []
+        if self.config.use_image:
+            if embedding is None:
+                raise ValueError("model uses the image branch but no embedding was given")
+            parts.append(embedding)
+        if self.config.use_features:
+            if features is None:
+                raise ValueError("model uses the feature branch but none were given")
+            parts.append(self._encode_features(features))
+
+        fused = torch.cat(parts, dim=1) if len(parts) > 1 else parts[0]
+        hidden = self.trunk(fused)
+        return {
+            "presence_logits": self.presence_head(hidden),
+            "severity_logits": self.severity_head(hidden),
+        }
+
     @torch.no_grad()
     def predict(
         self, image: torch.Tensor | None = None, features: torch.Tensor | None = None

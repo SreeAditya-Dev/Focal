@@ -129,6 +129,85 @@ def load_split(
     )
 
 
+class EmbeddingDataset(Dataset):
+    """Cached backbone embeddings paired with features and labels.
+
+    Used only while the backbone is frozen, where its output is a fixed
+    function of the image. Both flip orientations are held, so the horizontal
+    flip augmentation is preserved exactly rather than being dropped for speed.
+    """
+
+    def __init__(
+        self,
+        embeddings: np.ndarray,
+        embeddings_flipped: np.ndarray | None,
+        source: FocalDataset,
+        train: bool = False,
+    ):
+        if len(embeddings) != len(source):
+            raise ValueError(
+                f"embedding cache has {len(embeddings)} rows but the split has {len(source)} images — "
+                "the cache is stale; delete it and re-run training.cache_embeddings"
+            )
+        self.embeddings = embeddings
+        self.embeddings_flipped = embeddings_flipped
+        self.features = source.features
+        self.presence = source.presence
+        self.severity = source.severity
+        self.train = train
+
+    def __len__(self) -> int:
+        return len(self.embeddings)
+
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        source = self.embeddings
+        if self.train and self.embeddings_flipped is not None and np.random.random() < 0.5:
+            source = self.embeddings_flipped
+
+        sample = {
+            "embedding": torch.from_numpy(source[index]),
+            "presence": torch.from_numpy(self.presence[index]),
+            "severity": torch.from_numpy(self.severity[index]),
+        }
+        if self.features is not None:
+            sample["features"] = torch.from_numpy(self.features[index])
+        return sample
+
+
+def load_embedding_split(
+    embeddings_dir: str | Path, split: str, source: FocalDataset, train: bool = False
+) -> EmbeddingDataset:
+    """Load a cached split, verifying it matches the manifest it will be used with."""
+    embeddings_dir = Path(embeddings_dir)
+    plain_path = embeddings_dir / f"{split}.npy"
+    if not plain_path.exists():
+        raise SystemExit(
+            f"{plain_path} not found. Build it with:\n"
+            f"  python -m training.cache_embeddings --splits {split}"
+        )
+
+    # The cache is a bare array; its rows only mean anything in the order they
+    # were written. Verifying the path list catches a cache built against a
+    # different corpus, which would otherwise train every image against another
+    # image's embedding and still converge to something plausible.
+    paths_file = embeddings_dir / f"{split}_paths.txt"
+    if paths_file.exists():
+        cached_paths = paths_file.read_text(encoding="utf-8").splitlines()
+        if cached_paths != list(source.paths):
+            raise SystemExit(
+                f"the embedding cache for '{split}' was built from a different image list. "
+                "Delete dataset/generated/embeddings and re-run training.cache_embeddings"
+            )
+
+    flipped_path = embeddings_dir / f"{split}_flip.npy"
+    return EmbeddingDataset(
+        np.load(plain_path),
+        np.load(flipped_path) if flipped_path.exists() else None,
+        source,
+        train=train,
+    )
+
+
 def positive_weights(dataset: FocalDataset, cap: float = 12.0) -> torch.Tensor:
     """Per-issue ``pos_weight`` for ``BCEWithLogitsLoss``.
 
