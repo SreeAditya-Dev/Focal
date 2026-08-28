@@ -27,7 +27,7 @@ class AnalysisRecord(Base):
     # Model & Timing Metadata
     model_version = Column(String(100), nullable=False)
     processing_time_ms = Column(Float, nullable=False)
-    uncertainty = Column(Float, nullable=True)
+    uncertainty = Column(JSON, nullable=True)
     heatmap_issue = Column(String(50), nullable=True)
     
     # Timestamps

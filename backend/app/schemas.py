@@ -32,7 +32,7 @@ class AnalysisResponse(BaseModel):
     model_loaded: bool = True
     processing_time_ms: float
     timings_ms: dict[str, float] = Field(default_factory=dict)
-    uncertainty: float | None = None
+    uncertainty: Any = None
     heatmap_base64: str | None = None
     heatmap_issue: str | None = None
     created_at: datetime.datetime | None = None
