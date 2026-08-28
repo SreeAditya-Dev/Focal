@@ -68,6 +68,72 @@ python -m dataset.degradations --demo path/to/photo.jpg --out dataset/demo
 Renders every issue × method × severity (48 images) plus the clean original,
 and prints the severity each one actually achieved.
 
+## Phase 2 — classical features and rules
+
+### Extract features over the corpus
+
+```bash
+python -m dataset.extract_features --report
+```
+
+Writes `dataset/generated/features.parquet` (47 features per image) and, with
+`--report`, ranks each feature by per-issue AUC so you can see which measurements
+actually carry signal.
+
+### Refit the rule thresholds
+
+```bash
+python -m training.fit_rules
+```
+
+The shipped thresholds are argued from the physical meaning of each measurement
+(mean luma 95 is where shadow detail starts to go; a blockiness ratio of 1.0
+means no preferential 8×8 structure). This refits them to percentiles of the
+training split and prints the before/after validation F1 so the change is
+visible rather than assumed. Which features drive which issue, and how they
+combine, are *not* refit — that structure encodes reasoning that should not be
+silently rewritten by whatever correlates best in one corpus.
+
+### Run the tests
+
+```bash
+python -m pytest tests/ -q          # ~2 min; every assertion is directional
+```
+
+### The 47 features
+
+| Group | Measurements | Targets |
+|---|---|---|
+| Sharpness | Laplacian variance, contrast-normalised ratio, Tenengrad, Canny edge density, FFT high-frequency ratio, per-tile distribution | blur |
+| Exposure | V-channel mean/std/percentiles, shadow & highlight clipping, RMS contrast, dynamic range, histogram entropy | under/overexposure |
+| Noise | Immerkaer σ, flat-region σ, chroma σ, median-residual MAD, impulse ratio, texture ratio | noise |
+| Texture | GLCM contrast/homogeneity/energy/correlation, LBP uniformity | over-smoothing, detail loss |
+| Colour | saturation mean/std, Hasler–Süsstrunk colourfulness, grey fraction, channel edge correlation | desaturation, chroma faults |
+| Artifacts | blockiness, flat-block fraction, block jump, row/column discontinuity, largest uniform region, byte entropy | corruption |
+| Defects | radial falloff, linear structure, local contrast spread | vignetting, scratches |
+
+Extraction takes ~70 ms for a canonical 768 px image and ~180 ms including the
+resize from a 4000 px upload, which leaves room for CNN inference inside a
+synchronous request.
+
+### Two findings worth recording
+
+**Noise estimators are confounded by texture**, so the primary estimator reads
+the noise floor from the flattest blocks in the image, where by construction
+almost all remaining variation is noise. A photograph of gravel otherwise reads
+as extremely noisy.
+
+**Uneven sharpness does not identify a localised defect.** The obvious way to
+catch a lens smudge is to notice that some tiles are much softer than others —
+but measurement shows uniform blur drives that statistic down just as far
+(0.14, against 0.12 for a smudge and 0.29 for a clean frame), because blur
+flattens weakly-textured tiles faster than strongly-textured ones. Using it
+alone made motion blur rank as a defect. What actually separates the two is
+that *the sharpest tiles survive a smudge* — they retain 97% of their clean
+sharpness, against 1% under Gaussian blur. The rule layer therefore expresses
+this as a conjunction (`RampGroup`), and only severe smudges clear it; mild
+ones overlap the clean population outright and are left to the CNN.
+
 ## Design notes
 
 **Why synthetic.** Owning every transform parameter means the labels are exact
@@ -99,7 +165,7 @@ flags every re-saved photograph.
 ## Roadmap
 
 - [x] **Phase 1** — dataset acquisition and synthetic degradation
-- [ ] **Phase 2** — classical feature extraction (`focal_ml/features/`)
+- [x] **Phase 2** — classical features (`focal_ml/features/`) and rule layer (`focal_ml/fusion/rules.py`)
 - [ ] **Phase 3** — CNN training (`training/`)
 - [ ] **Phase 4** — fusion, Grad-CAM, calibration (`focal_ml/fusion/`, `focal_ml/inference/`)
 - [ ] **Phase 5** — evaluation (`evaluation/`)

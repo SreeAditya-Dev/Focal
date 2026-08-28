@@ -27,6 +27,26 @@ def resize_long_side(image: np.ndarray, long_side: int = CANONICAL_LONG_SIDE) ->
     return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
 
 
+def tile_stats(image: np.ndarray, grid: int) -> tuple[np.ndarray, np.ndarray]:
+    """Per-tile mean and standard deviation for a ``grid`` x ``grid`` tiling.
+
+    Vectorised over all tiles at once. The obvious Python loop calling ``.std()``
+    per tile costs a NumPy dispatch per tile and dominated feature extraction
+    before this existed.
+
+    Returns two flat arrays of length ``grid * grid``.
+    """
+    height, width = image.shape[:2]
+    tile_h, tile_w = height // grid, width // grid
+    if tile_h < 1 or tile_w < 1:
+        flat = image.reshape(1, -1).astype(np.float32)
+        return flat.mean(axis=1), flat.std(axis=1)
+
+    trimmed = image[: tile_h * grid, : tile_w * grid].astype(np.float32)
+    blocks = trimmed.reshape(grid, tile_h, grid, tile_w).swapaxes(1, 2).reshape(grid * grid, -1)
+    return blocks.mean(axis=1), blocks.std(axis=1)
+
+
 def to_gray(image: np.ndarray) -> np.ndarray:
     """Return a single-channel uint8 luma view of a BGR or grayscale image."""
     if image.ndim == 2:
