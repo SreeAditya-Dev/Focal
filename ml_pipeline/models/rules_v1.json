@@ -1,0 +1,213 @@
+{
+  "version": "rules_v1_fitted",
+  "rules": {
+    "blur": {
+      "aggregation": "mean",
+      "severity_ramp": 0,
+      "report_threshold": 0.25,
+      "ramps": [
+        {
+          "type": "ramp",
+          "feature": "hf_energy_ratio",
+          "onset": 0.447629,
+          "saturate": 0.095178,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "sharpness_ratio",
+          "onset": 0.194133,
+          "saturate": 0.00184,
+          "weight": 0.8
+        },
+        {
+          "type": "ramp",
+          "feature": "edge_density",
+          "onset": 0.073356,
+          "saturate": 0.006269,
+          "weight": 0.6
+        }
+      ]
+    },
+    "underexposure": {
+      "aggregation": "mean",
+      "severity_ramp": 0,
+      "report_threshold": 0.25,
+      "ramps": [
+        {
+          "type": "ramp",
+          "feature": "brightness_mean",
+          "onset": 102.620872,
+          "saturate": 61.089304,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "shadow_clip_fraction",
+          "onset": 0.086138,
+          "saturate": 0.359901,
+          "weight": 0.9
+        },
+        {
+          "type": "ramp",
+          "feature": "brightness_p95",
+          "onset": 181.0,
+          "saturate": 146.0,
+          "weight": 0.5
+        }
+      ]
+    },
+    "overexposure": {
+      "aggregation": "mean",
+      "severity_ramp": 0,
+      "report_threshold": 0.25,
+      "ramps": [
+        {
+          "type": "ramp",
+          "feature": "brightness_mean",
+          "onset": 163.566978,
+          "saturate": 220.092178,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "highlight_clip_fraction",
+          "onset": 0.153929,
+          "saturate": 0.538202,
+          "weight": 0.9
+        },
+        {
+          "type": "ramp",
+          "feature": "brightness_p05",
+          "onset": 52.0,
+          "saturate": 121.0,
+          "weight": 0.5
+        }
+      ]
+    },
+    "noise": {
+      "aggregation": "max",
+      "severity_ramp": 0,
+      "report_threshold": 0.25,
+      "ramps": [
+        {
+          "type": "ramp",
+          "feature": "noise_sigma_flat",
+          "onset": 6.697635,
+          "saturate": 20.340492,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "noise_impulse_ratio",
+          "onset": 0.021162,
+          "saturate": 0.037474,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "noise_sigma_chroma",
+          "onset": 0.921443,
+          "saturate": 3.734085,
+          "weight": 0.8
+        }
+      ]
+    },
+    "corruption": {
+      "aggregation": "max",
+      "severity_ramp": 0,
+      "report_threshold": 0.25,
+      "ramps": [
+        {
+          "type": "ramp",
+          "feature": "blockiness",
+          "onset": 1.105088,
+          "saturate": 1.133641,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "channel_edge_correlation",
+          "onset": 0.88,
+          "saturate": 0.45,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "row_discontinuity",
+          "onset": 6.0,
+          "saturate": 25.0,
+          "weight": 0.9
+        },
+        {
+          "type": "ramp",
+          "feature": "col_discontinuity",
+          "onset": 6.0,
+          "saturate": 25.0,
+          "weight": 0.9
+        },
+        {
+          "type": "ramp",
+          "feature": "largest_uniform_region",
+          "onset": 0.12,
+          "saturate": 0.4,
+          "weight": 0.7
+        },
+        {
+          "type": "ramp",
+          "feature": "flat_block_fraction",
+          "onset": 0.1,
+          "saturate": 0.45,
+          "weight": 0.6
+        }
+      ]
+    },
+    "defect": {
+      "aggregation": "max",
+      "severity_ramp": 0,
+      "report_threshold": 0.35,
+      "ramps": [
+        {
+          "type": "ramp",
+          "feature": "radial_falloff",
+          "onset": 0.93,
+          "saturate": 0.66,
+          "weight": 1.0
+        },
+        {
+          "type": "ramp",
+          "feature": "linear_structure",
+          "onset": 0.21,
+          "saturate": 0.38,
+          "weight": 0.7
+        },
+        {
+          "type": "ramp",
+          "feature": "noise_impulse_ratio",
+          "onset": 0.004,
+          "saturate": 0.05,
+          "weight": 0.6
+        },
+        {
+          "type": "group",
+          "label": "localised blur",
+          "weight": 0.9,
+          "ramps": [
+            {
+              "feature": "tile_sharpness_uniformity",
+              "onset": 0.16,
+              "saturate": 0.07,
+              "weight": 1.0
+            },
+            {
+              "feature": "tile_sharpness_median",
+              "onset": 1.2,
+              "saturate": 3.0,
+              "weight": 1.0
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

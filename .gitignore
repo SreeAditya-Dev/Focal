@@ -6,15 +6,25 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# ML artifacts
+# ML artifacts & datasets
 ml_pipeline/dataset/raw/
 ml_pipeline/dataset/generated/
+ml_pipeline/dataset/bundle/
+ml_pipeline/dataset/invalid_samples/
+ml_pipeline/dist/
 ml_pipeline/models/*.pt
 ml_pipeline/models/*.onnx
 !ml_pipeline/models/.gitkeep
 ml_pipeline/evaluation/reports/*
 !ml_pipeline/evaluation/reports/.gitkeep
 *.parquet
+
+# Archives & Bundles
+*.tar.gz
+*.tar
+*.zip
+*.7z
+*.rar
 
 # Backend
 backend/uploads/

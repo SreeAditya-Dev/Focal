@@ -107,7 +107,12 @@ def score_config(config: RuleConfig, frame) -> dict[str, dict[str, float]]:
 
     for issue in ISSUE_TYPES:
         threshold = config.rules[issue].report_threshold
-        predicted = np.array([outcome[issue].confidence >= threshold for outcome in outcomes])
+        # dtype is explicit because np.array([]) of an empty list is float64,
+        # and the boolean AND below then fails with an opaque ufunc casting
+        # error rather than reporting an empty split.
+        predicted = np.array(
+            [outcome[issue].confidence >= threshold for outcome in outcomes], dtype=bool
+        )
         actual = frame[f"{issue}_present"].to_numpy().astype(bool)
 
         true_positive = int((predicted & actual).sum())
@@ -160,6 +165,17 @@ def main() -> None:
     train = merged[merged["split"] == "train"]
     validation = merged[merged["split"] == "val"]
     print(f"Fitting on {len(train)} training images, validating on {len(validation)}")
+
+    # Caught here rather than several frames deeper. The usual cause is a
+    # partial feature table — an interrupted extraction leaves one covering only
+    # part of the corpus, and since paths sort by split, a truncated run can
+    # produce a table with no training rows at all.
+    if len(train) < 100 or len(validation) < 50:
+        raise SystemExit(
+            f"not enough data to fit: {len(train)} train / {len(validation)} val rows "
+            f"after joining {len(manifest)} manifest rows to {len(features)} feature rows.\n"
+            "The feature table is probably incomplete — re-run: python -m dataset.extract_features"
+        )
 
     defaults = RuleConfig()
     fitted = RuleConfig(version="rules_v1_fitted")
