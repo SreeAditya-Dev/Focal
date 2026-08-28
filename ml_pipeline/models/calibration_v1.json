@@ -1,0 +1,27 @@
+{
+  "version": "calibration_v1",
+  "temperatures": {
+    "blur": 1.0,
+    "underexposure": 1.0,
+    "overexposure": 1.0,
+    "noise": 1.0,
+    "corruption": 1.0,
+    "defect": 1.0
+  },
+  "ece_before": {
+    "blur": 0.0108,
+    "underexposure": 0.0789,
+    "overexposure": 0.0269,
+    "noise": 0.0209,
+    "corruption": 0.0836,
+    "defect": 0.2257
+  },
+  "ece_after": {
+    "blur": 0.0108,
+    "underexposure": 0.0789,
+    "overexposure": 0.0269,
+    "noise": 0.0209,
+    "corruption": 0.0836,
+    "defect": 0.2257
+  }
+}

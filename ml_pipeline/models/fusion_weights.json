@@ -1,0 +1,10 @@
+{
+  "rule_weight": {
+    "blur": 0.6,
+    "underexposure": 0.6,
+    "overexposure": 0.6,
+    "noise": 0.15,
+    "corruption": 0.15,
+    "defect": 0.0
+  }
+}

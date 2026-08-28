@@ -1,0 +1,185 @@
+{
+  "history": [
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 1,
+      "train_loss": 0.6481969217371836,
+      "val_loss": 0.48021176350422395,
+      "val_auc": 0.9338039107291691,
+      "val_f1": 0.7116429207324768,
+      "seconds": 42.6
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 2,
+      "train_loss": 0.461726240912198,
+      "val_loss": 0.42672882355176484,
+      "val_auc": 0.9422049171060988,
+      "val_f1": 0.7603142624883358,
+      "seconds": 40.9
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 3,
+      "train_loss": 0.4254688550984807,
+      "val_loss": 0.4188722795400864,
+      "val_auc": 0.9430749931791024,
+      "val_f1": 0.7514339708329637,
+      "seconds": 41.0
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 4,
+      "train_loss": 0.4028400012049906,
+      "val_loss": 0.4116187917880523,
+      "val_auc": 0.9450860085745778,
+      "val_f1": 0.760364394831314,
+      "seconds": 42.0
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 5,
+      "train_loss": 0.3824901305762682,
+      "val_loss": 0.4216158179136423,
+      "val_auc": 0.946035878477662,
+      "val_f1": 0.7706303579440695,
+      "seconds": 40.7
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 6,
+      "train_loss": 0.3733931943971155,
+      "val_loss": 0.3958300483532441,
+      "val_auc": 0.9477175057188449,
+      "val_f1": 0.7598273743872278,
+      "seconds": 40.9
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 7,
+      "train_loss": 0.35936436949847556,
+      "val_loss": 0.399786459788298,
+      "val_auc": 0.9477264199437365,
+      "val_f1": 0.7587103139864096,
+      "seconds": 40.9
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 8,
+      "train_loss": 0.3481904883347944,
+      "val_loss": 0.4029457709728143,
+      "val_auc": 0.9481549281071938,
+      "val_f1": 0.7663074339343648,
+      "seconds": 40.8
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 9,
+      "train_loss": 0.3346610450665856,
+      "val_loss": 0.41641600819734426,
+      "val_auc": 0.9463239555741748,
+      "val_f1": 0.7588471708673835,
+      "seconds": 41.0
+    },
+    {
+      "phase": "Phase A (frozen backbone)",
+      "epoch": 10,
+      "train_loss": 0.33058339344247323,
+      "val_loss": 0.39582465443855674,
+      "val_auc": 0.9496244413126506,
+      "val_f1": 0.7694568279017759,
+      "seconds": 41.9
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 1,
+      "train_loss": 0.2923783738051217,
+      "val_loss": 0.38775608585431026,
+      "val_auc": 0.9509386989378603,
+      "val_f1": 0.7766428529939612,
+      "seconds": 41.5
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 2,
+      "train_loss": 0.2867252920561425,
+      "val_loss": 0.3886749693980584,
+      "val_auc": 0.9507612771395529,
+      "val_f1": 0.7815025228885505,
+      "seconds": 41.3
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 3,
+      "train_loss": 0.27898914934780106,
+      "val_loss": 0.39140754632460767,
+      "val_auc": 0.9510488100477064,
+      "val_f1": 0.7827981347003222,
+      "seconds": 41.3
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 4,
+      "train_loss": 0.27775233202831334,
+      "val_loss": 0.38924765311754667,
+      "val_auc": 0.9509710655417191,
+      "val_f1": 0.7825008085173958,
+      "seconds": 42.1
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 5,
+      "train_loss": 0.2707825026716955,
+      "val_loss": 0.3888808002838722,
+      "val_auc": 0.9512084747966676,
+      "val_f1": 0.7775922937485348,
+      "seconds": 41.9
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 6,
+      "train_loss": 0.27024344988331395,
+      "val_loss": 0.38871842286525626,
+      "val_auc": 0.9511587198567736,
+      "val_f1": 0.7788456881173621,
+      "seconds": 41.6
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 7,
+      "train_loss": 0.2665615874108764,
+      "val_loss": 0.38971266563122087,
+      "val_auc": 0.9513136254005476,
+      "val_f1": 0.7793027581452497,
+      "seconds": 41.5
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 8,
+      "train_loss": 0.26452574862520073,
+      "val_loss": 0.39527467611508493,
+      "val_auc": 0.9510945212866823,
+      "val_f1": 0.7860250137024943,
+      "seconds": 41.2
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 9,
+      "train_loss": 0.26484477598761674,
+      "val_loss": 0.39290226438106635,
+      "val_auc": 0.9512814518721852,
+      "val_f1": 0.7803275839173821,
+      "seconds": 42.5
+    },
+    {
+      "phase": "Phase B (fine-tuning)",
+      "epoch": 10,
+      "train_loss": 0.26398030074419954,
+      "val_loss": 0.39419192442527184,
+      "val_auc": 0.951120966057528,
+      "val_f1": 0.7824312263863193,
+      "seconds": 41.5
+    }
+  ],
+  "best_val_auc": 0.9513136254005476
+}
