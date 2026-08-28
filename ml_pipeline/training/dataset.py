@@ -31,12 +31,8 @@ from torch.utils.data import Dataset
 
 from focal_ml.constants import CNN_INPUT_SIZE, ISSUE_TYPES
 from focal_ml.features import FEATURE_NAMES
+from focal_ml.model.preprocessing import preprocess_for_cnn
 from focal_ml.utils import imread_bgr
-
-#: ImageNet statistics — required, because the backbone's pretrained filters
-#: were fitted in this normalised space.
-IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
 
 class FocalDataset(Dataset):
@@ -77,8 +73,6 @@ class FocalDataset(Dataset):
         return len(self.paths)
 
     def _load_image(self, index: int) -> torch.Tensor:
-        import cv2
-
         image = imread_bgr(self.root / self.paths[index])
         if image is None:
             # A corpus image that will not decode is a generation bug, not a
@@ -86,14 +80,8 @@ class FocalDataset(Dataset):
             # bad file is worse, so substitute grey and keep going.
             image = np.full((self.size, self.size, 3), 128, dtype=np.uint8)
 
-        image = cv2.resize(image, (self.size, self.size), interpolation=cv2.INTER_AREA)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-
-        if self.train and np.random.random() < 0.5:
-            image = image[:, ::-1]
-
-        image = (image - IMAGENET_MEAN) / IMAGENET_STD
-        return torch.from_numpy(np.ascontiguousarray(image.transpose(2, 0, 1)))
+        flip = self.train and np.random.random() < 0.5
+        return torch.from_numpy(preprocess_for_cnn(image, size=self.size, flip=flip))
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         sample: dict[str, torch.Tensor] = {

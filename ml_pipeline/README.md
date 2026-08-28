@@ -33,13 +33,22 @@ same thing across sources:
 
 | Check | Threshold |
 |---|---|
-| Resolution | ≥ 640 × 480 |
+| Resolution | ≥ 512 × 384 |
 | Sharpness (variance of Laplacian) | ≥ 150 |
 | Mean luma | 70 – 185 |
 | RMS contrast | ≥ 25 |
-| Estimated noise σ | ≤ 4.0 |
 
 Writes `dataset/raw/base_index.json`.
+
+**Noise is measured and recorded but not screened on**, which is the opposite of
+the obvious choice. Every noise estimator confuses dense texture with sensor
+noise. Against DIV2K, the image scoring *highest* for noise — ten times the rest
+— turned out to be an aerial photograph of a vineyard: wall-to-wall crop rows,
+pristine, no grain at all. Rejecting on that measure discards images with a
+bias, since the most detailed scenes score highest and those are the most
+valuable base images precisely because they have the most high-frequency content
+for blur to destroy. Screening them out leaves a corpus of smooth images and a
+blur detector that transfers badly to detailed ones.
 
 ### 2. Generate the labelled corpus
 
@@ -212,6 +221,82 @@ Configuration is dataclasses plus CLI flags rather than a YAML file — one fewe
 format to keep in sync, and the defaults stay type-checked next to the code
 that reads them.
 
+## Phase 4 — fusion, explainability, calibration
+
+```bash
+python -m training.calibrate --model models/focal_cnn_v1.pt --tune-fusion
+```
+
+Writes `models/calibration_v1.json` (and `fusion_weights.json` with
+`--tune-fusion`). Both are fitted on the **validation** split: the model is
+overconfident precisely because it fits the training set, so temperatures
+fitted there would be near 1.0 and correct nothing.
+
+### The predictor
+
+`FocalPredictor` is the only class the backend imports. Constructed once at
+startup, called concurrently, it owns the whole path:
+
+```
+bytes -> decode -> canonical 768px -> 47 features ─┬─> rules ─┐
+                                                   │          ├─> fuse -> score + issues
+                                    -> 224px CNN ──┴─> calibrate ┘
+                                                              └─> Grad-CAM overlay
+```
+
+It **degrades rather than fails**: with no checkpoint it runs the rule layer
+alone and reports `model_loaded: false`. The API can boot and serve before a
+model has ever been trained, which also means a corrupt or missing weights file
+is a degraded service rather than an outage.
+
+### Fusion
+
+Confidence is `w·rule + (1-w)·cnn`, with **w set per issue** from the Phase 2
+measurements — exposure is near-definitively decided by brightness statistics
+(w=0.55), while no global statistic identifies a localised defect (w=0.15).
+
+Severity is blended differently, weighted by each source's own confidence. A
+source that detected nothing has no opinion on how severe the problem is; its
+severity is 0 because it saw nothing, not because it judged the issue mild. A
+plain weighted mean would read that 0 as a vote for "not severe" and
+systematically under-report whenever the two sources disagree.
+
+The score is computed only from issues that clear the reporting threshold, so
+six faint sub-threshold signals cannot outscore one real defect.
+
+### Grad-CAM
+
+Gradients are taken from the presence **logit**, not the sigmoid: a confident
+prediction saturates the sigmoid, its derivative vanishes, and the map becomes
+numerical noise — exactly for the predictions a user is most likely to question.
+Maps are per issue, since "where is the blur" and "where is the corruption" have
+different answers.
+
+One subtlety worth recording. The natural way to detect "no localised evidence"
+is to test whether the CAM's peak is below some small threshold — but a CAM's
+absolute scale is the product of activation and gradient magnitudes, which vary
+by orders of magnitude across models and training states (an untrained network
+in eval mode produces activations around 1e-8, a trained one values near unity).
+Any fixed floor rejects good maps on one model and accepts noise on another. The
+scale-free test is the *sign* of the pre-ReLU peak: at or below zero means every
+channel contributed negatively, which is what "nothing localised here" actually
+means.
+
+### Calibration and uncertainty
+
+**Temperature scaling** — one scalar per issue, dividing the logit. Being
+monotonic it cannot change any ranking or AUC; it only moves probabilities onto
+a scale where 0.7 means 70%. This matters beyond presentation: confidence
+multiplies the penalty in the quality score, so a miscalibrated 0.9 corrupts the
+headline number too. A fitted temperature that would *raise* ECE is discarded in
+favour of leaving that issue uncalibrated — the step exists to reduce
+calibration error and must never increase it.
+
+**MC dropout** (opt-in, `uncertainty=true`) runs N stochastic passes and reports
+mean ± std per issue. Only the dropout layers are reactivated; calling
+`model.train()` would also switch BatchNorm, which at batch size 1 normalises
+each sample by its own statistics and silently corrupts every prediction.
+
 ## Design notes
 
 **Why synthetic.** Owning every transform parameter means the labels are exact
@@ -244,6 +329,6 @@ flags every re-saved photograph.
 
 - [x] **Phase 1** — dataset acquisition and synthetic degradation
 - [x] **Phase 2** — classical features (`focal_ml/features/`) and rule layer (`focal_ml/fusion/rules.py`)
-- [ ] **Phase 3** — CNN training (`training/`)
-- [ ] **Phase 4** — fusion, Grad-CAM, calibration (`focal_ml/fusion/`, `focal_ml/inference/`)
+- [x] **Phase 3** — CNN architecture and training (`focal_ml/model/`, `training/`)
+- [x] **Phase 4** — fusion, Grad-CAM, calibration, predictor (`focal_ml/fusion/scorer.py`, `focal_ml/inference/`)
 - [ ] **Phase 5** — evaluation (`evaluation/`)

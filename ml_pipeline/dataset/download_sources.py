@@ -59,7 +59,7 @@ SOURCES: dict[str, Source] = {
         url="https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip",
         approx_mb=3300,
         approx_images=800,
-        note="DIV2K training split — large download, opt in explicitly",
+        note="DIV2K training split - large download, opt in explicitly",
     ),
     # DIV2K is landscape-heavy; COCO supplies people, interiors, text and
     # close-ups, which is what stops the CNN keying on scene type.
@@ -68,7 +68,7 @@ SOURCES: dict[str, Source] = {
         url="http://images.cocodataset.org/zips/val2017.zip",
         approx_mb=778,
         approx_images=5000,
-        note="COCO val2017 — varied everyday scenes",
+        note="COCO val2017 - varied everyday scenes",
     ),
 }
 
@@ -82,11 +82,27 @@ DEFAULT_SOURCES = ("div2k", "coco")
 # --------------------------------------------------------------------------
 
 SCREEN_LONG_SIDE = 512
-MIN_WIDTH, MIN_HEIGHT = 640, 480
+MIN_WIDTH, MIN_HEIGHT = 512, 384
 MIN_SHARPNESS = 150.0        # variance of Laplacian
 BRIGHTNESS_RANGE = (70.0, 185.0)   # mean luma — excludes already-mis-exposed shots
 MIN_CONTRAST = 25.0          # RMS contrast — excludes flat/hazy frames
-MAX_NOISE_SIGMA = 4.0        # estimated sensor noise, 0-255 scale
+
+# Noise is measured and recorded, but deliberately NOT used to reject.
+#
+# Every available estimator confuses dense texture with sensor noise, and the
+# flat-region estimator used here degrades specifically when an image has no
+# flat regions to read. Measured against DIV2K, the image scoring *highest* for
+# noise (sigma 41, ten times the rest) is an aerial photograph of a vineyard —
+# wall-to-wall crop rows, pristine, no visible grain at all.
+#
+# Rejecting on this would not merely discard good images, it would discard them
+# with a bias: the most detailed scenes score highest, and those are the most
+# valuable base images precisely because they have the most high-frequency
+# content for blur to destroy. Screening them out would leave a corpus of smooth
+# images and a blur detector that transfers badly to detailed ones.
+#
+# What actually guarantees clean base images is source curation plus the
+# sharpness, exposure and contrast checks, all of which measure what they claim.
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
@@ -94,6 +110,17 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 # --------------------------------------------------------------------------
 # Download
 # --------------------------------------------------------------------------
+
+
+def _already_extracted(target: Path) -> bool:
+    """Whether a source has been unpacked already.
+
+    Checked *before* downloading, not just before extracting. Archives are
+    deleted once unpacked to save disk, so without this a second run — adding a
+    source, or re-screening with different thresholds — would re-download
+    gigabytes it already has on disk in expanded form.
+    """
+    return (target / ".extracted").exists()
 
 
 def _download(url: str, dest: Path, chunk: int = 1 << 20) -> Path:
@@ -166,14 +193,20 @@ class BaseImage:
 
 
 def _estimate_noise_sigma(gray: np.ndarray) -> float:
-    """Immerkaer's fast noise estimate: convolve with a kernel that annihilates
-    smooth content and locally-linear gradients, leaving mostly noise."""
-    height, width = gray.shape
-    if height < 3 or width < 3:
-        return 0.0
-    kernel = np.array([[1, -2, 1], [-2, 4, -2], [1, -2, 1]], dtype=np.float32)
-    response = cv2.filter2D(gray.astype(np.float32), -1, kernel)
-    return float(np.sqrt(np.pi / 2.0) * np.abs(response).sum() / (6.0 * (width - 2) * (height - 2)))
+    """Noise floor read from the flattest blocks in the image.
+
+    Uses the same estimator as the feature pipeline rather than a local copy.
+    The obvious choice here is Immerkaer's whole-image estimate, and that is
+    what this was — but it responds to *texture* as much as to noise, and DIV2K
+    is full of foliage and fabric. Measured against the 100-image validation
+    set, the whole-image estimator put the median at 4.0 and rejected 51 of them
+    as noisy; they were simply detailed. Reading the floor from the flattest
+    blocks, where by construction little but noise remains, measures what the
+    threshold is actually meant to exclude.
+    """
+    from focal_ml.features.noise import flat_region_sigma
+
+    return flat_region_sigma(gray)
 
 
 def screen_image(path: Path, source: str) -> BaseImage | None:
@@ -198,8 +231,6 @@ def screen_image(path: Path, source: str) -> BaseImage | None:
     if not (BRIGHTNESS_RANGE[0] <= brightness <= BRIGHTNESS_RANGE[1]):
         return None
     if contrast < MIN_CONTRAST:
-        return None
-    if noise_sigma > MAX_NOISE_SIGMA:
         return None
 
     return BaseImage(
@@ -307,12 +338,18 @@ def main() -> None:
     for name in args.sources:
         source = SOURCES[name]
         print(f"[{name}] {source.note}")
-        archive = _download(source.url, raw_dir / f"{name}.zip")
-        extracted = _extract(archive, raw_dir / name)
+        extracted = raw_dir / name
+
+        if _already_extracted(extracted):
+            print(f"  already extracted, skipping download: {extracted}")
+        else:
+            archive = _download(source.url, raw_dir / f"{name}.zip")
+            _extract(archive, extracted)
+            if not args.keep_archives and archive.exists():
+                archive.unlink()
+                print(f"  removed archive {archive.name}")
+
         records.extend(screen_directory(extracted, name, args.target_per_source, args.workers, rng))
-        if not args.keep_archives and archive.exists():
-            archive.unlink()
-            print(f"  removed archive {archive.name}")
         print()
 
     if args.local is not None:
@@ -337,7 +374,7 @@ def main() -> None:
                     "min_sharpness_laplacian_var": MIN_SHARPNESS,
                     "brightness_mean_range": list(BRIGHTNESS_RANGE),
                     "min_rms_contrast": MIN_CONTRAST,
-                    "max_noise_sigma": MAX_NOISE_SIGMA,
+                    "noise_sigma": "recorded, not screened on (see module header)",
                 },
                 "counts": {
                     source: sum(1 for r in records if r["source"] == source)
