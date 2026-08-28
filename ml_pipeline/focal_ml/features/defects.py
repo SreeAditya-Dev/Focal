@@ -58,12 +58,10 @@ def linear_structure_score(gray: np.ndarray) -> float:
         theta=np.pi / 180,
         threshold=60,
         minLineLength=int(diagonal * 0.15),
-        maxLineGap=6,
-    )
-    if lines is None:
+        )
+    if lines is None or len(lines) == 0:
         return 0.0
 
-    total = sum(float(np.hypot(x2 - x1, y2 - y1)) for x1, y1, x2, y2 in lines[:, 0])
     return float(total / (diagonal * 20.0))
 
 
