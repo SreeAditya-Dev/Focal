@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "focal-ml"
+version = "0.1.0"
+description = "Focal — hybrid classical-CV + CNN image quality and defect analysis"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "opencv-python-headless>=4.8",
+    "scikit-image>=0.22",
+    "scipy>=1.11",
+    "pillow>=10.0",
+]
+
+[project.optional-dependencies]
+# Needed only to build the training corpus (download + synthesise).
+data = [
+    "requests>=2.31",
+    "tqdm>=4.66",
+    "pandas>=2.1",
+    "pyarrow>=14.0",
+]
+# Needed for inference (backend) and training.
+torch = [
+    "torch>=2.1",
+    "torchvision>=0.16",
+]
+# Everything required to run training + evaluation offline.
+train = [
+    "focal-ml[data,torch]",
+    "pyyaml>=6.0",
+    "scikit-learn>=1.3",
+    "matplotlib>=3.8",
+]
+
+[tool.setuptools.packages.find]
+include = ["focal_ml*"]
+
+[tool.setuptools.package-data]
+focal_ml = ["py.typed"]
