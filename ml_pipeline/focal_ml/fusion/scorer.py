@@ -143,13 +143,13 @@ def fuse(
         # physical classical evidence (rule_confidence >= 0.15) OR high CNN
         # confidence (model_confidence >= 0.80).
         if issue == "defect" and cnn_presence is not None:
-            if rule_confidence < 0.15 and model_confidence < 0.80:
+            if rule_confidence < 0.60 and model_confidence < 0.82:
                 confidence *= 0.5
             # Suppress spurious defect when corruption is strongly dominant over defect
             if (
                 float(cnn_presence.get("corruption", 0.0)) > 0.65
                 and float(cnn_presence.get("corruption", 0.0)) > model_confidence
-                and rule_confidence < 0.15
+                and rule_confidence < 0.60
             ):
                 confidence *= 0.5
 

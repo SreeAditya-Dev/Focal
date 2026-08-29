@@ -170,8 +170,8 @@
         {
           "type": "ramp",
           "feature": "radial_falloff",
-          "onset": 0.93,
-          "saturate": 0.66,
+          "onset": 0.82,
+          "saturate": 0.55,
           "weight": 1.0
         },
         {
@@ -184,8 +184,8 @@
         {
           "type": "ramp",
           "feature": "noise_impulse_ratio",
-          "onset": 0.004,
-          "saturate": 0.05,
+          "onset": 0.035,
+          "saturate": 0.10,
           "weight": 0.6
         },
         {

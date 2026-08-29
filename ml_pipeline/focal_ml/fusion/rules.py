@@ -218,12 +218,12 @@ def default_rules() -> dict[str, IssueRule]:
                 # Corner brightness relative to centre. Measured separation is
                 # clean, with no overlap: clean scenes sit at 0.98-1.12 and
                 # heavy vignetting at 0.61-0.70.
-                Ramp("radial_falloff", onset=0.93, saturate=0.66, weight=1.0),
+                Ramp("radial_falloff", onset=0.82, saturate=0.55, weight=1.0),
                 # Long straight high-contrast structures. Overlaps mildly with
                 # clean scenes containing architecture, hence the lower weight.
                 Ramp("linear_structure", onset=0.21, saturate=0.38, weight=0.7),
                 # Hot pixels and sensor dust, which move no other statistic.
-                Ramp("noise_impulse_ratio", onset=0.004, saturate=0.05, weight=0.6),
+                Ramp("noise_impulse_ratio", onset=0.035, saturate=0.10, weight=0.6),
                 # Localised blur — a lens smudge or a fingerprint on the glass.
                 RampGroup(
                     ramps=(
