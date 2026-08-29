@@ -90,6 +90,16 @@ class FusionResult:
     all_severities: dict[str, float] = field(default_factory=dict)
 
 
+REPORT_THRESHOLDS: dict[str, float] = {
+    "blur": 0.40,
+    "underexposure": 0.42,
+    "overexposure": 0.40,
+    "noise": 0.48,
+    "corruption": 0.52,
+    "defect": 0.65,
+}
+
+
 def fuse(
     rule_outcomes: Mapping[str, RuleOutcome],
     cnn_presence: Mapping[str, float] | None = None,
@@ -128,6 +138,29 @@ def fuse(
 
         confidence = alpha * rule_confidence + (1.0 - alpha) * model_confidence
 
+        # Defect false-positive suppression:
+        # A localized visual defect (scratch, smudge, dust) must have either
+        # physical classical evidence (rule_confidence >= 0.15) OR high CNN
+        # confidence (model_confidence >= 0.80).
+        if issue == "defect" and cnn_presence is not None:
+            if rule_confidence < 0.15 and model_confidence < 0.80:
+                confidence *= 0.5
+            # Suppress spurious defect when corruption is strongly dominant over defect
+            if (
+                float(cnn_presence.get("corruption", 0.0)) > 0.65
+                and float(cnn_presence.get("corruption", 0.0)) > model_confidence
+                and rule_confidence < 0.15
+            ):
+                confidence *= 0.5
+
+        # If blur is detected with strong CNN confidence, ensure confidence & severity scale properly
+        if issue == "blur" and cnn_presence is not None and model_confidence >= 0.70:
+            confidence = max(confidence, model_confidence * 0.85)
+
+        # If underexposure is detected with strong CNN confidence, ensure confidence & severity scale properly
+        if issue == "underexposure" and cnn_presence is not None and model_confidence >= 0.70:
+            confidence = max(confidence, model_confidence * 0.85)
+
         # Confidence-weighted severity: a source that saw nothing abstains
         # rather than voting for "not severe".
         rule_vote = alpha * rule_confidence
@@ -138,10 +171,19 @@ def fuse(
         else:
             severity = 0.0
 
+        # When blur is strongly detected, ensure severity is at least medium (0.45)
+        if issue == "blur" and (model_confidence >= 0.70 or rule_confidence >= 0.40):
+            severity = max(severity, model_severity, 0.45)
+
+        # When underexposure is strongly detected, ensure severity is properly scaled
+        if issue == "underexposure" and (model_confidence >= 0.70 or rule_confidence >= 0.40):
+            severity = max(severity, model_severity, 0.45)
+
         confidences[issue] = round(confidence, 4)
         severities[issue] = round(severity, 4)
 
-        if confidence >= report_threshold:
+        issue_thr = REPORT_THRESHOLDS.get(issue, REPORT_THRESHOLD) if report_threshold == REPORT_THRESHOLD else report_threshold
+        if confidence >= issue_thr:
             severity = max(severity, MIN_SEVERITY_SCORE)
             issues.append(
                 DetectedIssue(

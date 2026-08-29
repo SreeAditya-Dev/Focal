@@ -225,17 +225,6 @@ def default_rules() -> dict[str, IssueRule]:
                 # Hot pixels and sensor dust, which move no other statistic.
                 Ramp("noise_impulse_ratio", onset=0.004, saturate=0.05, weight=0.6),
                 # Localised blur — a lens smudge or a fingerprint on the glass.
-                #
-                # Uneven sharpness alone cannot express this: uniform blur drives
-                # tile uniformity down just as far as a smudge does (0.14 vs
-                # 0.12, against 0.29 for a clean frame), and using it alone made
-                # motion blur rank as a defect. The second condition is what
-                # disambiguates — measured across scenes, the sharpest tiles
-                # retain 97% of their clean sharpness under a smudge but only 1%
-                # under Gaussian blur.
-                #
-                # Only severe smudges clear this. Mild ones overlap the clean
-                # population outright, and are left to the CNN.
                 RampGroup(
                     ramps=(
                         Ramp("tile_sharpness_uniformity", onset=0.16, saturate=0.07),
