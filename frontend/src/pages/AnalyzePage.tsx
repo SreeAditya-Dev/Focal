@@ -87,8 +87,8 @@ export const AnalyzePage: React.FC = () => {
           {isLoading && (
             <div className="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center text-center">
               <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin mb-3" />
-              <h4 className="text-sm font-bold text-slate-100">Extracting 47 Features & Running CNN</h4>
-              <p className="text-xs text-slate-400 mt-1">Calibrating Bayesian probabilities...</p>
+              <h4 className="text-sm font-bold text-foreground">Extracting 47 Features & Running CNN</h4>
+              <p className="text-xs text-muted-foreground mt-1">Calibrating Bayesian probabilities...</p>
             </div>
           )}
 
@@ -121,15 +121,15 @@ export const AnalyzePage: React.FC = () => {
               <div className="glass-panel rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-base font-bold text-slate-100">{analysisResult.filename}</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <h3 className="text-base font-bold text-foreground">{analysisResult.filename}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {analysisResult.width} × {analysisResult.height} px •{' '}
                       {analysisResult.summary}
                     </p>
                   </div>
                   <button
                     onClick={exportJSON}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-border text-xs font-semibold text-popover-foreground transition-colors"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     Export JSON
@@ -137,7 +137,7 @@ export const AnalyzePage: React.FC = () => {
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
                     Detected Quality Degradations ({analysisResult.issues.length})
                   </span>
                   {analysisResult.issues.length === 0 ? (

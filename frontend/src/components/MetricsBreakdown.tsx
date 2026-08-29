@@ -43,7 +43,7 @@ export const MetricsBreakdown: React.FC<MetricsBreakdownProps> = ({ stats }) => 
       >
         <div className="flex items-center gap-2">
           <Cpu className="w-4 h-4 text-indigo-400" />
-          <h3 className="text-sm font-bold text-slate-100">47 Classical Computer Vision Metrics</h3>
+          <h3 className="text-sm font-bold text-foreground">47 Classical Computer Vision Metrics</h3>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-indigo-400 font-semibold">
           <span>{isOpen ? 'Collapse' : 'Inspect Features'}</span>
@@ -52,9 +52,9 @@ export const MetricsBreakdown: React.FC<MetricsBreakdownProps> = ({ stats }) => 
       </button>
 
       {isOpen && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-border/80">
           {Object.entries(categories).map(([catName, metrics]) => (
-            <div key={catName} className="glass-card rounded-xl p-3 border border-slate-800/60">
+            <div key={catName} className="glass-card rounded-xl p-3 border border-border/60">
               <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">
                 {catName}
               </h4>
@@ -62,9 +62,9 @@ export const MetricsBreakdown: React.FC<MetricsBreakdownProps> = ({ stats }) => 
                 {metrics.map((m) => {
                   const val = stats[m.key];
                   return (
-                    <div key={m.key} className="flex items-center justify-between py-0.5 text-slate-300">
-                      <span className="text-slate-400 font-sans">{m.name}:</span>
-                      <span className="font-semibold text-slate-100">
+                    <div key={m.key} className="flex items-center justify-between py-0.5 text-popover-foreground">
+                      <span className="text-muted-foreground font-sans">{m.name}:</span>
+                      <span className="font-semibold text-foreground">
                         {val !== undefined ? val.toFixed(3) : '—'} {m.unit || ''}
                       </span>
                     </div>

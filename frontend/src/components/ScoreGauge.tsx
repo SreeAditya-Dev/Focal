@@ -84,7 +84,7 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score, label, processing
           <span className="text-4xl font-extrabold tracking-tight text-white font-mono">
             {score.toFixed(1)}
           </span>
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
             / 100
           </span>
         </div>
@@ -98,7 +98,7 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score, label, processing
           <span>{label}</span>
         </div>
         {processingTimeMs !== undefined && (
-          <span className="text-[11px] font-mono text-slate-500 mt-2">
+          <span className="text-[11px] font-mono text-muted-foreground mt-2">
             Inference: {processingTimeMs.toFixed(1)}ms
           </span>
         )}

@@ -52,8 +52,8 @@ export const BatchResultsTable: React.FC<BatchResultsTableProps> = ({
     <div className="glass-panel rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-bold text-slate-100">Batch Inspection Summary</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h3 className="text-base font-bold text-foreground">Batch Inspection Summary</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Processed {batchData.successful} of {batchData.total} files in {(batchData.total_time_ms / 1000).toFixed(2)}s
           </p>
         </div>
@@ -67,9 +67,9 @@ export const BatchResultsTable: React.FC<BatchResultsTableProps> = ({
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-800">
+      <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-900/80 text-slate-400 uppercase font-semibold border-b border-slate-800">
+          <thead className="bg-card/80 text-muted-foreground uppercase font-semibold border-b border-border">
             <tr>
               <th className="px-4 py-3">File</th>
               <th className="px-4 py-3">Score</th>
@@ -79,21 +79,21 @@ export const BatchResultsTable: React.FC<BatchResultsTableProps> = ({
               <th className="px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 font-mono">
+          <tbody className="divide-y divide-border/60 font-mono">
             {batchData.results.map((r, i) => (
-              <tr key={i} className="hover:bg-slate-800/30 transition-colors">
-                <td className="px-4 py-3 font-sans font-medium text-slate-200">{r.filename}</td>
-                <td className="px-4 py-3 font-bold text-slate-100">{r.quality_score.toFixed(1)}</td>
+              <tr key={i} className="hover:bg-muted/30 transition-colors">
+                <td className="px-4 py-3 font-sans font-medium text-card-foreground">{r.filename}</td>
+                <td className="px-4 py-3 font-bold text-foreground">{r.quality_score.toFixed(1)}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase ${getLabelBadge(r.quality_label)}`}>
                     {r.quality_label}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-sans text-slate-300">
+                <td className="px-4 py-3 font-sans text-popover-foreground">
                   {r.issues.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {r.issues.map((iss, j) => (
-                        <span key={j} className="bg-slate-800 px-1.5 py-0.5 rounded text-[11px] text-indigo-300">
+                        <span key={j} className="bg-muted px-1.5 py-0.5 rounded text-[11px] text-indigo-300">
                           {iss.type} ({iss.severity})
                         </span>
                       ))}
@@ -102,7 +102,7 @@ export const BatchResultsTable: React.FC<BatchResultsTableProps> = ({
                     <span className="text-emerald-400">Clean</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-400">{r.processing_time_ms.toFixed(0)}ms</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.processing_time_ms.toFixed(0)}ms</td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => onSelectResult(r)}

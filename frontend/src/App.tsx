@@ -32,7 +32,7 @@ export const App: React.FC = () => {
         {activeTab === 'history' && <HistoryPage />}
         {activeTab === 'model' && <ModelInfoPage />}
       </main>
-      <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500 font-medium">
+      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground font-medium">
         Focal AI Vision Quality Intelligence • Powered by FastAPI & MobileNetV3
       </footer>
     </div>

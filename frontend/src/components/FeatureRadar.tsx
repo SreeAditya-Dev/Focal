@@ -32,7 +32,7 @@ export const FeatureRadar: React.FC<FeatureRadarProps> = ({ stats }) => {
 
   return (
     <div className="glass-panel rounded-2xl p-5 flex flex-col items-center">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 self-start mb-2">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground self-start mb-2">
         6-Axis Quality Balance
       </h3>
       <div className="w-full h-56">

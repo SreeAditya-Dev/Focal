@@ -49,40 +49,40 @@ export const IssueCard: React.FC<IssueCardProps> = ({ issue }) => {
   const Icon = getIcon();
 
   return (
-    <div className="glass-card rounded-xl p-4 border border-slate-800 hover:border-slate-700 transition-all">
+    <div className="glass-card rounded-xl p-4 border border-border hover:border-border transition-all">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-slate-800/80 flex items-center justify-center text-indigo-400 border border-slate-700/50">
+          <div className="w-9 h-9 rounded-lg bg-muted/80 flex items-center justify-center text-indigo-400 border border-border/50">
             <Icon className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-slate-100 capitalize">{issue.type}</h4>
+            <h4 className="text-sm font-bold text-foreground capitalize">{issue.type}</h4>
             <div className="flex items-center gap-2 mt-0.5">
               <span
                 className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${getSeverityBadge()}`}
               >
                 {issue.severity} severity
               </span>
-              <span className="text-xs font-mono text-slate-400">
+              <span className="text-xs font-mono text-muted-foreground">
                 {(issue.confidence * 100).toFixed(0)}% confidence
               </span>
             </div>
           </div>
         </div>
 
-        <div className="text-right font-mono text-xs text-slate-400">
+        <div className="text-right font-mono text-xs text-muted-foreground">
           <div>Rule: {(issue.rule_confidence * 100).toFixed(0)}%</div>
           <div>CNN: {(issue.cnn_confidence * 100).toFixed(0)}%</div>
         </div>
       </div>
 
       {issue.evidence && issue.evidence.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-slate-800/60 space-y-1">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+        <div className="mt-3 pt-3 border-t border-border/60 space-y-1">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
             Physical Evidence:
           </span>
           {issue.evidence.map((ev, i) => (
-            <div key={i} className="flex items-start gap-1.5 text-xs text-slate-300">
+            <div key={i} className="flex items-start gap-1.5 text-xs text-popover-foreground">
               <ChevronRight className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
               <span>{ev}</span>
             </div>

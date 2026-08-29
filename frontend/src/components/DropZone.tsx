@@ -100,7 +100,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Upload Image{batchMode ? 's' : ''}
         </span>
         <div className="flex items-center gap-2">
@@ -109,7 +109,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
               batchMode
                 ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                : 'text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800'
+                : 'text-muted-foreground hover:text-card-foreground bg-card border border-border'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
         className={`relative border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 glass-panel ${
           isDragging
             ? 'border-indigo-500 bg-indigo-500/10 scale-[1.01]'
-            : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+            : 'border-border hover:border-border hover:bg-secondary/60'
         } ${isLoading ? 'pointer-events-none opacity-50' : ''}`}
       >
         <input
@@ -142,14 +142,14 @@ export const DropZone: React.FC<DropZoneProps> = ({
           <UploadCloud className="w-7 h-7" />
         </div>
 
-        <h3 className="text-base font-bold text-slate-100 mb-1">
+        <h3 className="text-base font-bold text-foreground mb-1">
           {batchMode ? 'Drop multiple images here' : 'Drop your image here or browse'}
         </h3>
-        <p className="text-xs text-slate-400 max-w-sm mb-4">
+        <p className="text-xs text-muted-foreground max-w-sm mb-4">
           Supports high-resolution JPEG, PNG, WebP, BMP, and TIFF files.
         </p>
 
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ImageIcon className="w-3.5 h-3.5" />
           <span>Full 47-feature CV analysis + Grad-CAM Heatmap</span>
         </div>
@@ -157,22 +157,22 @@ export const DropZone: React.FC<DropZoneProps> = ({
 
       {!batchMode && (
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs text-slate-500 font-medium">Quick test samples:</span>
+          <span className="text-xs text-muted-foreground font-medium">Quick test samples:</span>
           <button
             onClick={() => loadSample('clean')}
-            className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-medium transition-colors"
+            className="px-2 py-1 rounded bg-card hover:bg-muted border border-border text-xs text-popover-foreground font-medium transition-colors"
           >
             Clean Sample
           </button>
           <button
             onClick={() => loadSample('blur')}
-            className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-rose-300 font-medium transition-colors"
+            className="px-2 py-1 rounded bg-card hover:bg-muted border border-border text-xs text-rose-300 font-medium transition-colors"
           >
             Blur Sample
           </button>
           <button
             onClick={() => loadSample('noise')}
-            className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-amber-300 font-medium transition-colors"
+            className="px-2 py-1 rounded bg-card hover:bg-muted border border-border text-xs text-amber-300 font-medium transition-colors"
           >
             Noisy Sample
           </button>
