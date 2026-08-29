@@ -16,6 +16,7 @@
 
 ## 📑 Table of Contents
 
+- [Live Demo & Walkthrough](#-live-demo--walkthrough)
 - [Key Capabilities](#-key-capabilities)
 - [System Architecture](#-system-architecture)
 - [The Dual-Branch Hybrid Approach](#-the-dual-branch-hybrid-approach)
@@ -32,6 +33,22 @@
 - [REST API Reference & Code Examples](#-rest-api-reference--code-examples)
 - [Automated Verification & Test Suites](#-automated-verification--test-suites)
 - [Assessment Criteria Mapping](#-assessment-criteria-mapping)
+
+---
+
+## 🎥 Live Demo & Walkthrough
+
+> 🎬 **Interactive System Walkthrough:** [**`demo video.mp4`**](demo%20video.mp4)
+
+<div align="center">
+  <a href="demo%20video.mp4">
+    <img src="docs/demo_preview.gif" alt="Focal AI Vision Demo Walkthrough Preview" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);" />
+  </a>
+  <p align="center">
+    <em>▶️ <b>Click the preview above or <a href="demo%20video.mp4">open demo video.mp4</a> to view the full HD interactive recording.</b><br>
+    Showcases drag-and-drop analysis, real-time Grad-CAM explainability heatmaps, 6-axis quality radar balance, 47-metric classical feature inspection, batch analysis mode, and persisted audit log history.</em>
+  </p>
+</div>
 
 ---
 
