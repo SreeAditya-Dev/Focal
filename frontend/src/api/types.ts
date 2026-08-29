@@ -43,9 +43,26 @@ export interface BatchAnalysisResponse {
   errors: Array<{ filename: string; error: string }>;
 }
 
+export interface HistoryItem {
+  id: number;
+  filename: string;
+  file_size?: number;
+  width?: number;
+  height?: number;
+  quality_score: number;
+  quality_label: 'EXCELLENT' | 'ACCEPTABLE' | 'POOR' | 'UNUSABLE' | string;
+  issue_count: number;
+  issues_summary: string[];
+  processing_time_ms: number;
+  created_at: string;
+}
+
 export interface HistoryListResponse {
+  items: HistoryItem[];
   total: number;
   page: number;
+  limit?: number;
+  total_pages?: number;
 }
 
 export interface HealthResponse {
