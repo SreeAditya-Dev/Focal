@@ -45,8 +45,6 @@ export const analyzeBatch = async (
 
 export const getHistory = async (
   page = 1,
-  pageSize = 20,
-  labelFilter?: string
   limit = 20,
   qualityLabel?: string,
   search?: string
@@ -54,8 +52,6 @@ export const getHistory = async (
   const res = await api.get<HistoryListResponse>('/history', {
     params: {
       page,
-      page_size: pageSize,
-      label_filter: labelFilter,
       limit,
       quality_label: qualityLabel || undefined,
       search: search || undefined,
@@ -76,4 +72,3 @@ export const deleteHistoryItem = async (id: number): Promise<void> => {
 export const clearHistory = async (): Promise<void> => {
   await api.delete('/history');
 };
-
