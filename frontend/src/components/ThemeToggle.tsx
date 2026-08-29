@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
 export const ThemeToggle: React.FC = () => {
-  const [isDark, setIsDark] = useState<boolean>(true);
+  const [isDark, setIsDark] = useState<boolean>(false);
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
