@@ -1,26 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { getHistory, deleteHistoryItem, clearHistory } from '../api/client';
-import { AnalysisResponse } from '../api/types';
-import { Trash2, Search, Filter, RefreshCw, Eye, Calendar, FileText } from 'lucide-react';
+import { getHistory, getHistoryItem, deleteHistoryItem, clearHistory } from '../api/client';
+import { HistoryItem, AnalysisResponse } from '../api/types';
+import { Trash2, Search, Filter, RefreshCw, X, FileText } from 'lucide-react';
 import { ScoreGauge } from '../components/ScoreGauge';
 import { IssueCard } from '../components/IssueCard';
 import { MetricsBreakdown } from '../components/MetricsBreakdown';
 
 export const HistoryPage: React.FC = () => {
-  const [historyItems, setHistoryItems] = useState<AnalysisResponse[]>([]);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [labelFilter, setLabelFilter] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AnalysisResponse | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const fetchHistory = async () => {
     setIsLoading(true);
     try {
-      const res = await getHistory(page, 20, labelFilter || undefined);
-      setHistoryItems(res.items);
-      setTotal(res.total);
+      const res = await getHistory(page, 20, labelFilter || undefined, searchTerm || undefined);
+      setHistoryItems(res.items || []);
+      setTotal(res.total || 0);
     } catch (err) {
       console.error('Failed to load history', err);
     } finally {
@@ -31,6 +32,18 @@ export const HistoryPage: React.FC = () => {
   useEffect(() => {
     fetchHistory();
   }, [page, labelFilter]);
+
+  const handleSelectRecord = async (item: HistoryItem) => {
+    setIsLoadingDetail(true);
+    try {
+      const detail = await getHistoryItem(item.id);
+      setSelectedRecord(detail);
+    } catch (err) {
+      console.error('Failed to fetch detail', err);
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Delete this analysis record?')) return;
@@ -54,8 +67,8 @@ export const HistoryPage: React.FC = () => {
     }
   };
 
-  const filteredItems = historyItems.filter((item) =>
-    item.filename.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredItems = (historyItems || []).filter((item) =>
+    (item.filename || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -96,6 +109,7 @@ export const HistoryPage: React.FC = () => {
             placeholder="Search by filename..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && fetchHistory()}
             className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
           />
         </div>
@@ -149,7 +163,7 @@ export const HistoryPage: React.FC = () => {
                         className={`hover:bg-slate-800/40 cursor-pointer transition-colors ${
                           selectedRecord?.id === item.id ? 'bg-indigo-500/10' : ''
                         }`}
-                        onClick={() => setSelectedRecord(item)}
+                        onClick={() => handleSelectRecord(item)}
                       >
                         <td className="px-4 py-3 text-slate-500">#{item.id}</td>
                         <td className="px-4 py-3 font-sans font-medium text-slate-200">
@@ -174,7 +188,11 @@ export const HistoryPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 font-sans text-slate-300">
-                          {item.issues.length} detected
+                          {item.issue_count !== undefined
+                            ? `${item.issue_count} detected`
+                            : item.issues_summary && item.issues_summary.length > 0
+                            ? `${item.issues_summary.length} detected`
+                            : '0 detected'}
                         </td>
                         <td className="px-4 py-3 text-slate-500 font-sans text-[11px]">
                           {item.created_at ? new Date(item.created_at).toLocaleTimeString() : '—'}
@@ -206,9 +224,9 @@ export const HistoryPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setSelectedRecord(null)}
-                  className="text-xs text-slate-400 hover:text-slate-200"
+                  className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg"
                 >
-                  ✕ Close
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -220,16 +238,24 @@ export const HistoryPage: React.FC = () => {
 
               <div className="mt-4 space-y-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                  Issues ({selectedRecord.issues.length})
+                  Issues ({selectedRecord.issues ? selectedRecord.issues.length : 0})
                 </span>
-                {selectedRecord.issues.map((issue, idx) => (
-                  <IssueCard key={idx} issue={issue} />
-                ))}
+                {selectedRecord.issues && selectedRecord.issues.length > 0 ? (
+                  selectedRecord.issues.map((issue, idx) => (
+                    <IssueCard key={idx} issue={issue} />
+                  ))
+                ) : (
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium">
+                    ✓ Clean image: No issues detected.
+                  </div>
+                )}
               </div>
 
-              <div className="mt-4">
-                <MetricsBreakdown stats={selectedRecord.stats} />
-              </div>
+              {selectedRecord.stats && (
+                <div className="mt-4">
+                  <MetricsBreakdown stats={selectedRecord.stats} />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -237,4 +263,3 @@ export const HistoryPage: React.FC = () => {
     </div>
   );
 };
-
